@@ -7,7 +7,7 @@ Useful for networking stuff, probably.
 features:
 * does not generate memory garbage
 * data oriented design that doesn't hide stuff from you
-* unit tests
+* unit and fuzz tests
 * no dependencies
 * supports a lot of field types
 * simple implementation, a few hundred lines
@@ -55,6 +55,20 @@ BitStream.measure.str(s, "hello there, I'm a utf-8 string :o")
 
 // at this point, s.buf is [], and s.offsetBits is 302 
 ```
+
+## supported types
+
+* uint (N) arbitrary length unsigned ints where N = bitsize
+* uint8
+* uint16
+* uint32
+* uint64
+* uleb128 (arbitrary length unsigned BigInts)
+* float16
+* float32
+* float64
+* unicode strings
+* byte arrays
 
 
 # references
