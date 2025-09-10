@@ -1,0 +1,24 @@
+{
+  "name": "@footgun/bitstream",
+  "version": "0.1.0",
+  "description": "bit oriented bit packing and unpacking",
+  "main": "src/bitstream.js",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreinstein/footgun-bitstream.git"
+  },
+  "keywords": [],
+  "author": "Michael Reintein",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mreinstein/footgun-bitstream/issues"
+  },
+  "homepage": "https://github.com/mreinstein/footgun-bitstream#readme"
+}
