@@ -17,9 +17,6 @@ export function uint (byteArray, offsetBits, value, bitsToWrite) {
     const byteIndex = currentOffset >>> 3; // = Math.floor(currentOffset / 8)
     const bitIndex = currentOffset & 7;    // = currentOffset % 8
 
-    if (byteIndex >= byteArray.length)
-      throw new Error('Byte array is too small for the requested offset.');
-
     // How many bits we can fit into the current byte from `bitIndex` to the end of the byte
     const bitsInThisByte = Math.min(remaining, 8 - bitIndex);
 
@@ -54,6 +51,39 @@ export function uint (byteArray, offsetBits, value, bitsToWrite) {
 }
 
 
+/**
+ * unsigned LEB128 (Little Endian Base-128)
+ * 
+ * packs an arbitrarily large integer into a variable number of bytes.
+ * Instead of writing 8 bytes for a 64-bit integer, it writes as many bytes
+ * as needed to cover the significant bits.
+ *
+ * Each byte carries 7 bits of payload and 1 continuation flag:
+ *   * bits 0-6: the next 7 bits of the number
+ *   * bit 7 (the most significant bit): set to 1 if more bytes follow, 0 if this is the last byte
+ *
+ * This makes it "base-128" (since each chunk carries 7 bits = values 0-12)
+ *
+ * @param {Uint8Array|number[]} byteArray   - The array where bits will be stored.
+ * @param {number} offsetBits               - The current bit offset in `byteArray`.
+ * @param {BigInt} num                      - The unsigned integer value to pack.
+ * @returns Number The new bit offset after writing
+ */
+export function uleb128 (arr, offsetBits, num) {
+    do {
+        let byte = Number(num & 0x7Fn)
+        num >>= 7n
+        if (num !== 0n)
+            byte |= 0x80   // v has remaining significant bits, set the continuation flag
+
+        uint8(arr, offsetBits, byte)
+        offsetBits += 8
+    } while (num !== 0n)
+
+   return offsetBits
+}
+
+
 export function uint8 (arr, offsetBits, num) {
     const bitsToWrite = 8
     uint(arr, offsetBits, num, bitsToWrite)
@@ -72,13 +102,36 @@ export function uint32 (arr, offsetBits, num) {
 }
 
 
-export function str (arr, offsetBits, val) {
-    if (val.length > 255)
-        throw new Error(`Can't pack string with more than 255 characters.`)
+export function uint64 (arr, offsetBits, num) {
+    for (let i=0; i < 8; i++) {
+        uint8(arr, offsetBits, Number(num & 0xFFn))
+        offsetBits += 8
+        num >>= 8n
+    }
+}
 
-    uint8(arr, offsetBits, val.length)
-    for (let i=0; i < val.length; i++)
-        uint8(arr, offsetBits + (1 + i) * 8, val.charCodeAt(i))
+
+// pack a utf-8 string
+// @return Number how many bits were used to pack the string
+export function str (arr, offsetBits, val) {
+
+    if (!val) {
+        uint16(arr, offsetBits, 0)
+        return 16
+    }
+
+    // use 16 bits to store string length
+    if (val.length > 65535)
+        throw new Error(`Can't pack string with more than 65535 characters.`)
+ 
+    const e = (new TextEncoder()).encode(val)
+        
+    uint16(arr, offsetBits, e.byteLength)
+    offsetBits += 16
+    for (let i=0; i < e.byteLength; i++)
+        uint8(arr, offsetBits + (i * 8), e[i])
+
+    return 16 + (e.byteLength * 8)
 }
 
 
@@ -165,3 +218,4 @@ export function float64 (byteArray, offsetBits, float64Value, littleEndian = tru
 
   return offset;
 }
+

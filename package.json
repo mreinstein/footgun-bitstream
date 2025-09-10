@@ -1,6 +1,6 @@
 {
   "name": "@footgun/bitstream",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "bit oriented bit packing and unpacking",
   "main": "src/bitstream.js",
   "type": "module",
@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "fuzz": "node fuzz.js",
     "prepublishOnly": "npm test",
     "test": "node --test"
   },

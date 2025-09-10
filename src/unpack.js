@@ -42,6 +42,43 @@ export function uint (byteArray, offsetBits, bitsToRead) {
 }
 
 
+/**
+ * unsigned LEB128 (Little Endian Base-128)
+ * 
+ * unpacks an arbitrarily large integer fram a variable number of bytes.
+ * Instead of reading 8 bytes for a 64-bit integer, it reads as many bytes
+ * as needed to cover the significant bits.
+ *
+ * Each byte carries 7 bits of payload and 1 continuation flag:
+ *   * bits 0-6: the next 7 bits of the number
+ *   * bit 7 (the most significant bit): set to 1 if more bytes follow, 0 if this is the last byte
+ *
+ * This makes it "base-128" (since each chunk carries 7 bits = values 0-127)
+ *
+ @returns Object { value, bitsRead } value is a BigInt
+ */
+export function uleb128 (arr, offsetBits) {
+    let shift = 0n
+    let result = 0n
+
+    const originalOffsetBits = offsetBits
+
+    while (true) {
+        const byte = BigInt(uint8(arr, offsetBits))
+        offsetBits += 8
+
+        result |= (byte & 0x7Fn) << shift
+
+        if ((byte & 0x80n) === 0n)
+            break // continuation bit not set, we've reached the end of the int
+
+        shift += 7n
+    }
+
+    return { value: result, bitsRead: offsetBits - originalOffsetBits }
+}
+
+
 export function uint8 (arr, offsetBits) {
     const bitsToRead = 8
     return uint(arr, offsetBits, bitsToRead)
@@ -59,22 +96,42 @@ export function uint32 (arr, offsetBits) {
     return uint(arr, offsetBits, bitsToRead)
 }
 
+// read a BigIntU64
+export function uint64(arr, offsetBits) {
+    let num = 0n
 
+    for (let i=0n; i < 8n; i++) {
+        let nextByte = BigInt(uint8(arr, offsetBits)) & 0xFFn
+        nextByte <<= (8n * i)
+        num |= nextByte
+        offsetBits += 8
+    }
+    return num
+}
+
+
+// unpack a utf-8 encoded string
 export function str (arr, offsetBits) {
     const byteIndex = Math.ceil(offsetBits/8)
-    if (byteIndex + 1 > arr.byteLength)
+    if (byteIndex + 2 > arr.byteLength)
         throw new Error('unpackString: out of range')
 
-    const len = uint8(arr, offsetBits)
+    const len = uint16(arr, offsetBits)
+    offsetBits += 16
+
+    if (len === 0)
+        return null
 
     if (byteIndex + len > arr.byteLength)
         throw new Error('unpackString: invalid length', len)
 
-    let result = ''
+    const decoder = new TextDecoder('utf-8');
+    const u = new Uint8Array(len)
+    
     for (let i=0; i < len; i++)
-        result += String.fromCharCode(uint8(arr, offsetBits + (1 + i) * 8))
+        u[i] = uint8(arr, offsetBits + (i * 8))
 
-    return result
+    return decoder.decode(u)
 }
 
 

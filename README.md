@@ -41,6 +41,22 @@ console.log(BitStream.read.uint(s, 3))  // prints 5
 ```
 
 
+# measuring stream bit size without allocating
+
+Some times it's useful to know how many bits a given stream would pack to without allocating or writing the data.
+You can achieve this with the `measure` operations:
+
+```javascript
+const s = BitStream.create(new Uint8Array(0)) // don't need any bytes allocated
+
+BitStream.measure.uint8(s, 36)
+BitStream.measure.uint(s, 12, 6)
+BitStream.measure.str(s, "hello there, I'm a utf-8 string :o")
+
+// at this point, s.buf is [], and s.offsetBits is 302 
+```
+
+
 # references
 
 Some of the original packing functions were derived from https://github.com/binaryjs/js-binarypack/blob/master/lib/binarypack.js
