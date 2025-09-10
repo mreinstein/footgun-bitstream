@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/mreinstein/footgun-bitstream.git"
   },
-  "keywords": [],
+  "keywords": [ "networking", "bitpacking", "bitstream" ],
   "author": "Michael Reintein",
   "license": "MIT",
   "bugs": {
