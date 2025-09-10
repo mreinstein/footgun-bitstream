@@ -22,11 +22,6 @@ export const read = {
 		stream.offsetBits += bitsToRead
 		return unpack.uint(stream.buf, stream.offsetBits - bitsToRead, bitsToRead)
 	},
-    uleb128: function (stream) {
-        const { value, bitsRead } = unpack.uleb128(stream.buf, stream.offsetBits)
-        stream.offsetBits += bitsRead
-        return value
-    },
 	uint8: function (stream) {
 		const bitsToRead = 8
 		stream.offsetBits += bitsToRead
@@ -48,7 +43,11 @@ export const read = {
         stream.offsetBits += 64
         return num
     },
-
+    uleb128: function (stream) {
+        const { value, bitsRead } = unpack.uleb128(stream.buf, stream.offsetBits)
+        stream.offsetBits += bitsRead
+        return value
+    },
 	float16: function (stream) {
 		const bitsToRead = 16
 		stream.offsetBits += bitsToRead
@@ -74,8 +73,6 @@ export const read = {
         stream.offsetBits += (16 + str.length * 8) 
         return str;
     },
-
-	// might be nice to be able to send/receive arrays not aligned on byte boundaries
 	arr: function (stream, byteCount) {
 		const bitsToRead = 8
 		const dest = new Uint8Array(byteCount)
@@ -93,9 +90,6 @@ export const write = {
 		pack.uint(stream.buf, stream.offsetBits, num, bitsToWrite)
 		stream.offsetBits += bitsToWrite
 	},
-    uleb128: function (stream, num) {
-        stream.offsetBits = pack.uleb128(stream.buf, stream.offsetBits, num)
-    },
 	uint8: function (stream, num) {
 		const bitsToWrite = 8
 		pack.uint(stream.buf, stream.offsetBits, num, bitsToWrite)
@@ -114,6 +108,9 @@ export const write = {
     uint64: function (stream, num) {
         pack.uint64(stream.buf, stream.offsetBits, num)
         stream.offsetBits += 64
+    },
+    uleb128: function (stream, num) {
+        stream.offsetBits = pack.uleb128(stream.buf, stream.offsetBits, num)
     },
 	float16: function (stream, num) {
 		pack.float16(stream.buf, stream.offsetBits, num)
@@ -143,12 +140,6 @@ export const measure = {
 	uint: function (stream, num, bitsToWrite) {
 		stream.offsetBits += bitsToWrite
 	},
-    uleb128: function (stream, num) {
-       do {
-           num >>= 7n
-           stream.offsetBits += 8
-       } while (num !== 0n)
-    },
 	uint8: function (stream, num) {
 		stream.offsetBits += 8
 	},
@@ -160,6 +151,12 @@ export const measure = {
 	},
     uint64: function (stream, num) {
         stream.offsetBits += 64
+    },
+    uleb128: function (stream, num) {
+       do {
+           num >>= 7n
+           stream.offsetBits += 8
+       } while (num !== 0n)
     },
 	float16: function (stream, num) {
 		stream.offsetBits += 16
@@ -186,7 +183,6 @@ export const measure = {
         stream.offsetBits += (e.byteLength * 8)
     },
 	arr: function (stream, src, byteCount) {
-            console.log('packing uint64', num, 'typeof:', typeof num)
-        return byteCount * 8
+        stream.offsetBits += (byteCount * 8)
 	},
 }
